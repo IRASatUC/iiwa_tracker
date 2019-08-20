@@ -1,0 +1,4 @@
+<launch>
+	<node pkg="kuka_control" type="controller.py" name="iiwa" output="screen">
+  </node>
+</launch>
