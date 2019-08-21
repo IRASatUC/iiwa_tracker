@@ -1,51 +1,62 @@
 #!/usr/bin/env python
-
-## License: Apache 2.0. See LICENSE file in root directory.
-## Copyright(c) 2015-2017 Intel Corporation. All Rights Reserved.
-
-###############################################
-##      Open CV and Numpy integration        ##
-###############################################
-
-import pyrealsense2 as rs
+import rospy
 import numpy as np
 import cv2
+from sensor_msgs.msg import Image, CameraInfo
+from cv_bridge import CvBridge, CvBridgeError
 
-# Configure depth and color streams
-pipeline = rs.pipeline()
-config = rs.config()
-config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
-config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
+class image_converter:
+    def __init__(self):
+        self.cam_width = 640
+        self.cam_height = 480
+        self.dist = 0.0
+        self.bridge=CvBridge()
+        self.camera_info_sub = rospy.Subscriber('/camera/aligned_depth_to_color/camera_info', CameraInfo, self.caminfo_callback)
+        self.depth_sub = rospy.Subscriber('/camera/aligned_depth_to_color/image_raw', Image, self.depth_callback)
+        self.color_sub = rospy.Subscriber('/camera/color/image_raw', Image, self.color_callback)
 
-# Start streaming
-pipeline.start(config)
+    def depth_callback(self, data):
+        try:
+            cv_img = self.bridge.imgmsg_to_cv2(data, "16UC1")
+        except CvBridgeError as e:
+            print(e)
 
-try:
-    while True:
+        # get the distance of center
+        x, y = self.cam_width/2, self.cam_height/2
+        self.dist = cv_img[x, y]
 
-        # Wait for a coherent pair of frames: depth and color
-        frames = pipeline.wait_for_frames()
-        depth_frame = frames.get_depth_frame()
-        color_frame = frames.get_color_frame()
-        if not depth_frame or not color_frame:
-            continue
+    def caminfo_callback(self, data):
+        self.cam_width = data.width
+        self.cam_height = data.height
 
-        # Convert images to numpy arrays
-        depth_image = np.asanyarray(depth_frame.get_data())
-        color_image = np.asanyarray(color_frame.get_data())
+    def draw_image(self, cv_img, title):
+        color = (0,0,255)
+        lineWeight = 2
+        centerx, centery = self.cam_width/2, self.cam_height/2
+        cv2.rectangle(cv_img, (centerx-50, centery-50), (centerx+50, centery+50), color, lineWeight)
+        cv2.line(cv_img, (centerx-70, centery), (centerx+70, centery), color, lineWeight)
+        cv2.line(cv_img, (centerx, centery-70), (centerx, centery+70), color, lineWeight)
 
-        # Apply colormap on depth image (image must be converted to 8-bit per pixel first)
-        depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
+        strDist = "The distance to zumopi is " + str(self.dist/1000.0) + " m"
+        cv2.putText(cv_img, strDist, (30, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
-        # Stack both images horizontally
-        images = np.hstack((color_image, depth_colormap))
+        cv2.imshow(title, cv_img)
 
-        # Show images
-        cv2.namedWindow('RealSense', cv2.WINDOW_AUTOSIZE)
-        cv2.imshow('RealSense', images)
-        cv2.waitKey(1)
+    def color_callback(self, data):
+        try:
+            cv_img = self.bridge.imgmsg_to_cv2(data, "bgr8")
+        except CvBridgeError as e:
+            print(e)
 
-finally:
+        self.draw_image(cv_img, "color")
+        cv2.waitKey(3)
 
-    # Stop streaming
-    pipeline.stop()
+
+if __name__ == '__main__':
+    ic = image_converter()
+    rospy.init_node("rsviewer", anonymous=True, log_level=rospy.DEBUG)
+    try:
+        rospy.spin()
+    except rospy.ROSInterruptException:
+        pass
+    cv2.destoryAllWindows();

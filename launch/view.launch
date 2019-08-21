@@ -1,0 +1,4 @@
+<launch>
+	<node pkg="robot_tracker" type="rsview.py" name="view" output="screen">
+  </node>
+</launch>

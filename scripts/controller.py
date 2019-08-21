@@ -20,7 +20,7 @@ def iiwa_transform():
                     [np.sin(theta), np.cos(theta), 0],
                     [0, 0, 1]])
     # vicon frame origin in iiwa frame (1.825, 0.385, 0.065) m
-    trans = np.array([1.825,0.385,-0.065])
+    trans = np.array([1.85,0.35,-0.07])
 
     return rot, trans
 
@@ -82,10 +82,14 @@ def controller():
     pub = rospy.Publisher('/iiwa/command/JointPosition', JointPosition, queue_size=1)
     rate = rospy.Rate(2)
 
+    last_a1, last_a6 = 0.0, 0.0
     # a1 = 0.0
     while not rospy.is_shutdown():
         jointPos = iiwa_joint_position(tracker.zumo_pos)
-        pub.publish(jointPos)
+        a1, a6 = jointPos.position.a1, jointPos.position.a6
+        if a1 != last_a1 or a6 != last_a6:
+            pub.publish(jointPos)
+            last_a1, last_a6 = a1, a6
         rate.sleep()
 
 if __name__ == '__main__':
