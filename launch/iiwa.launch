@@ -1,4 +1,4 @@
 <launch>
-	<node pkg="kuka_control" type="controller.py" name="iiwa" output="screen">
+	<node pkg="robot_tracker" type="controller.py" name="iiwa" output="screen">
   </node>
 </launch>
