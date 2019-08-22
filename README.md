@@ -39,5 +39,5 @@ robot tracker uses [KUKA iiwa](https://www.kuka.com/en-us/products/robotics-syst
 ## Play
 1. start vicon ```roslaunch vicon_bridge vicon.launch```
 2. start robot tracker ```roslaunch robot_tracker iiwa.launch```
-3. start realsense2_camera ```roslaunch realsense2_camera rs_camera.launch```
+3. start realsense2_camera ```roslaunch realsense2_camera rs_camera.launch align_depth:=true filters:=pointcloud ```
 4. move the zumopi, the robot will track the position of the zumopi.
