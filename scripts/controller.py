@@ -80,7 +80,7 @@ def controller():
     tracker = ViconBridge("vicon tracker")
     print(tracker.zumo_pos)
     pub = rospy.Publisher('/iiwa/command/JointPosition', JointPosition, queue_size=1)
-    rate = rospy.Rate(2)
+    rate = rospy.Rate(10)
 
     last_a1, last_a6 = 0.0, 0.0
     # a1 = 0.0

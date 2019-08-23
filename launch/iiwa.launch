@@ -1,4 +1,5 @@
 <launch>
 	<node pkg="robot_tracker" type="controller.py" name="iiwa" output="screen">
   </node>
+	<include file="$(find robot_tracker)/launch/view.launch"/>
 </launch>
