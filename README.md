@@ -42,3 +42,6 @@ robot tracker uses [KUKA iiwa](https://www.kuka.com/en-us/products/robotics-syst
     - the vicon 
     - the realsense2 camera
 - move the zumopi, the robot will track the position of the zumopi.
+
+## Developer
+Yufeng Sun | sunyf@mail.uc.edu | IRAS Lab @ University of Cincinnati
