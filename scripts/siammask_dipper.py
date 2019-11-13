@@ -121,6 +121,6 @@ def main():
 
 if __name__ == '__main__':
     try:
-        controller()
+        main()
     except rospy.ROSInterruptException:
         pass
