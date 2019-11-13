@@ -6,7 +6,6 @@ from __future__ import unicode_literals
 
 import sys
 import os
-import argparse
 
 import cv2
 import pyrealsense2 as rs
@@ -70,13 +69,13 @@ def main():
     rospy.loginfo("iiwa is ready")
 
     # load siammask config
-    cfg.merge_from_file(sys.path[0])+"siammask_r50_l3/config.yaml")
+    cfg.merge_from_file(sys.path[0]+"siammask_r50_l3/config.yaml")
     cfg.CUDA = torch.cuda.is_available()
     device = torch.device('cuda' if cfg.CUDA else 'cpu')
     # create model
     model = ModelBuilder()
     # load model
-    model.load_state_dict(torch.load(sys.path[0])+"siammask_r50_l3/model.pth",
+    model.load_state_dict(torch.load(sys.path[0]+"siammask_r50_l3/model.pth",
         map_location=lambda storage, loc: storage.cpu()))
     model.eval().to(device)
     # build tracker
