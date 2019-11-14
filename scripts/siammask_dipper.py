@@ -15,8 +15,8 @@ from numpy import pi
 from glob import glob
 
 import torch
-import tensorrt as trt
-from torch2trt import tensorrt_converter
+# import tensorrt as trt
+# from torch2trt import tensorrt_converter
 
 from pysot.core.config import cfg
 from pysot.models.model_builder import ModelBuilder
@@ -118,6 +118,8 @@ def main():
                               (0, 255, 0), 3)
                 x_of_obj = bbox[0]+0.5*bbox[2]
                 y_of_obj = bbox[1]+0.5*bbox[3]
+            cv2.imshow(video_name, frame)
+            cv2.waitKey(40)
 
 
 if __name__ == '__main__':
