@@ -62,11 +62,12 @@ class iiwaRobot():
 def main():
     # initialize
     iiwa = iiwaRobot()
-    iiwa.pub_joint_pos(JointPosition())
-    time.sleep(4)
+    # for _ in range(5):
+    #     iiwa.pub_joint_pos(JointPosition())
+    #     time.sleep(1)
     # get ready
     iiwa.pub_joint_pos(JOINT_PERCH)
-    time.sleep(1)
+    time.sleep(5)
     rospy.loginfo("iiwa is ready")
 
     # load siammask config
@@ -111,16 +112,36 @@ def main():
                 mask = mask.astype(np.uint8)
                 mask = np.stack([mask, mask*255, mask]).transpose(1, 2, 0)
                 frame = cv2.addWeighted(frame, 0.77, mask, 0.23, -1)
-            else:
                 bbox = list(map(int, outputs['bbox']))
                 cv2.rectangle(frame, (bbox[0], bbox[1]),
                               (bbox[0]+bbox[2], bbox[1]+bbox[3]),
                               (0, 255, 0), 3)
                 x_of_obj = bbox[0]+0.5*bbox[2]
                 y_of_obj = bbox[1]+0.5*bbox[3]
-            cv2.imshow(video_name, frame)
-            cv2.waitKey(40)
 
+                depth_pixel = [x_of_obj, y_of_obj]
+                depth_3d = depth_frame.get_distance(int(x_of_obj), int(y_of_obj))
+                point3d = rs.rs2_deproject_pixel_to_point(depth_intrin, depth_pixel, depth_3d)
+                print("Object 3D position: {}".format(point3d))
+            # else:
+            #     bbox = list(map(int, outputs['bbox']))
+            #     cv2.rectangle(frame, (bbox[0], bbox[1]),
+            #                   (bbox[0]+bbox[2], bbox[1]+bbox[3]),
+            #                   (0, 255, 0), 3)
+            #     x_of_obj = bbox[0]+0.5*bbox[2]
+            #     y_of_obj = bbox[1]+0.5*bbox[3]
+            #
+            #     depth_pixel = [x_of_obj, y_of_obj]
+            #     depth_3d = depth_frame.get_distance(int(x_of_obj), int(y_of_obj))
+            #     point3d = rs.rs2_deproject_pixel_to_point(depth_intrin, depth_pixel, depth_3d)
+            #     print("x:{}, y: {}, z:{}".format(x_of_obj,y_of_obj,depth_3d))
+
+            cv2.imshow(video_name, frame)
+            key = cv2.waitKey(40)
+            if key in (27, ord("q")):
+                break
+
+    pipeline.stop()
 
 if __name__ == '__main__':
     try:
