@@ -1,6 +1,6 @@
 # Getting Started
 
-This repo uses a [KUKA iiwa](https://www.kuka.com/en-us/products/robotics-systems/industrial-robots/lbr-iiwa) robot manipulting objects tracked either by a [Intel RealSense D435](https://www.intelrealsense.com/depth-camera-d435/) camera.  
+This repo uses a [KUKA iiwa](https://www.kuka.com/en-us/products/robotics-systems/industrial-robots/lbr-iiwa) robot manipulting objects tracked by a [Intel RealSense D435](https://www.intelrealsense.com/depth-camera-d435/) camera.  
 
 ## Pre-requisites
 1. [Ubuntu 18.04](http://releases.ubuntu.com/18.04/) or [Ubuntu 16.04](http://releases.ubuntu.com/16.04/)
@@ -52,15 +52,7 @@ This repo uses a [KUKA iiwa](https://www.kuka.com/en-us/products/robotics-system
 /iiwa/action/move_to_joint_position/result
 /iiwa/action/move_to_joint_position/status
 /iiwa/command/CartesianPose
-/iiwa/command/CartesianPoseLin[option] start ros master```roscore```
-77
-- start robot tracker ```roslaunch robot_tracker iiwa.launch```, this will start 
-78
-    - the vicon 
-79
-    - the realsense2 camera
-80
-- move the zumopi, the robot will track the position of the zumopi.
+/iiwa/command/CartesianPoseLin
 /iiwa/command/CartesianVelocity
 /iiwa/command/JointPosition
 /iiwa/command/JointPositionVelocity
@@ -95,5 +87,5 @@ rosrun iiwa_tracker siammask_dipper.py
 
 
 ## Developer
-Yufeng Sun | sunyf@mail.uc.edu | IRAS Lab @ University of Cincinnati
-Lin Zhang | lin.zhang@uc.edu | IRAS Lab @ University of Cincinnati
+|Yufeng Sun | sunyf@mail.uc.edu | IRAS Lab @ University of Cincinnati|
+|Lin Zhang | lin.zhang@uc.edu | IRAS Lab @ University of Cincinnati|
