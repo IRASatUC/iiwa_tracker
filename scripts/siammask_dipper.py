@@ -23,7 +23,10 @@ from pysot.models.model_builder import ModelBuilder
 from pysot.tracker.tracker_builder import build_tracker
 
 import rospy
+import tf
+from geometry_msgs.msg import PoseStamped
 from iiwa_msgs.msg import JointPosition
+
 
 # Define constant perching position
 JOINT_PERCH = JointPosition()
@@ -38,33 +41,27 @@ config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
 config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
 pipeline.start(config)
 
-def iiwa_transform():
-    # vicon frame is rotated 90 degrees along z axis in iiwa frame
-    theta = np.radians(90)
-    rot = np.array([[np.cos(theta), -np.sin(theta), 0],
-                    [np.sin(theta), np.cos(theta), 0],
-                    [0, 0, 1]])
-    # vicon frame origin in iiwa frame (1.825, 0.385, 0.065) m
-    trans = np.array([1.85,0.35,-0.07])
-
-    return rot, trans
-
 class iiwaRobot():
     def __init__(self):
         rospy.init_node('iiwa_node',anonymous=True, log_level=rospy.DEBUG)
         self.jpos_publisher = rospy.Publisher('/iiwa/command/JointPosition', JointPosition, queue_size=1)
+        self.rate = rospy.Rate(30.0)
+        # realsense frame listener
+        self.rs_ls = tf.TransformListener()
 
     def pub_joint_pos(self, joint_position):
         if not joint_position:
             joint_position = JointPosition()
         self.jpos_publisher.publish(joint_position)
+        rospy.loginfo("iiwa is moving to {}".format(joint_position))
+
 
 def main():
     # initialize
     iiwa = iiwaRobot()
-    # for _ in range(5):
-    #     iiwa.pub_joint_pos(JointPosition())
-    #     time.sleep(1)
+    for _ in range(5):
+        iiwa.pub_joint_pos(JointPosition())
+    time.sleep(5)
     # get ready
     iiwa.pub_joint_pos(JOINT_PERCH)
     time.sleep(5)
@@ -123,6 +120,15 @@ def main():
                 depth_3d = depth_frame.get_distance(int(x_of_obj), int(y_of_obj))
                 point3d = rs.rs2_deproject_pixel_to_point(depth_intrin, depth_pixel, depth_3d)
                 print("Object 3D position: {}".format(point3d))
+                t = iiwa.rs_ls.getLatestCommonTime('/iiwa_link_0', '/rs_d435')
+                poi = PoseStamped()
+                poi.header.frame_id = 'rs_d435'
+                poi.pose.orientation.w = 1.
+                poi.pose.position.x = point3d[0]
+                poi.pose.position.y = point3d[1]
+                poi.pose.position.z = point3d[2]
+                point_in_iiwa = iiwa.rs_ls.transformPose('/iiwa_link_0', poi)
+                rospy.loginfo("Point in iiwa: {}".format(point_in_iiwa))
             # else:
             #     bbox = list(map(int, outputs['bbox']))
             #     cv2.rectangle(frame, (bbox[0], bbox[1]),
