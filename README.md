@@ -86,7 +86,7 @@ rosrun iiwa_tracker siammask_dipper.py
 > make sure the script is executable by running `chmod +x $iiwa_tracker/scripts/siammask_dipper.py`
 
 
-## Developers
+## Contributors
 | Developer      | E-mail | Location
 | ----------- | ----------- | ----------------------------- |
 |Yufeng Sun | sunyf@mail.uc.edu | IRAS Lab @ University of Cincinnati |
