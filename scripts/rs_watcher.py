@@ -15,7 +15,6 @@ import time
 import cv2
 import pyrealsense2 as rs
 import numpy as np
-from numpy import pi
 from glob import glob
 
 import torch
@@ -61,9 +60,7 @@ def main():
         frames = pipeline.wait_for_frames()
         color_frame = frames.get_color_frame()
         depth_frame = frames.get_depth_frame()
-        # depth_intrinsics = depth_frame.profile.as_video_stream_profile().intrinsics
-        depth_intrinsics = rs.video_stream_profile(
-            depth_frame.profile).get_intrinsics()
+        depth_intrinsics = rs.video_stream_profile(depth_frame.profile).get_intrinsics()
         # convert image to numpy arrays
         if color_frame:
             frame = np.asanyarray(color_frame.get_data())
