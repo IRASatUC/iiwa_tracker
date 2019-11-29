@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+""" Transform POI from realsense frame into iiwa frame
+    Pre-requisite:
+        roslaunch iiwa_gazebo iiwa_gazebo_with_sunrise.launch (tf defined in that package)
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -24,28 +28,12 @@ import rospy
 import tf
 from robots.lbr import iiwaRobot
 from geometry_msgs.msg import PoseStamped
-from iiwa_msgs.msg import JointPosition
-
-
-# Define constant perching position
-JOINT_PERCH = JointPosition()
-JOINT_PERCH.position.a2 = pi/6
-JOINT_PERCH.position.a4 = -pi/3
-JOINT_PERCH.position.a6 = pi/3
 
 
 def main():
     # instantiate iiwa
     iiwa = iiwaRobot()
-    # zero joints
-    for _ in range(20):
-        iiwa.pub_joint_pos()
-    time.sleep(4)
-    # iiwa get ready
-    for _ in range(20):
-        iiwa.pub_joint_pos(JOINT_PERCH)
-    time.sleep(4)
-    rospy.loginfo("iiwa is ready")
+    time.sleep(4) # allow iiwa taking some time to wake up
     # Configure realsense D435 depth and color streams
     pipeline = rs.pipeline()
     config = rs.config()
@@ -68,7 +56,7 @@ def main():
     first_frame = True
     video_name = 'realsense_D435'
     cv2.namedWindow(video_name, cv2.WND_PROP_FULLSCREEN)
-
+    # begin tracking
     while True:
         frames = pipeline.wait_for_frames()
         color_frame = frames.get_color_frame()
@@ -98,25 +86,20 @@ def main():
                 mask = np.stack([mask, mask*255, mask]).transpose(1, 2, 0)
                 frame = cv2.addWeighted(frame, 0.77, mask, 0.23, -1)
                 bbox = list(map(int, outputs['bbox']))
-                # cv2.rectangle(frame, (bbox[0], bbox[1]),
-                #               (bbox[0]+bbox[2], bbox[1]+bbox[3]),
-                #               (0, 255, 0), 3)
-                x_of_obj = bbox[0]+0.5*bbox[2]
-                y_of_obj = bbox[1]+0.5*bbox[3]
-                obj_pixel = int([x_of_obj, y_of_obj])
-                depth_3d = depth_frame.get_distance(obj_pixel[0], obj_pixel[1])
-                pos_rs = rs.rs2_deproject_pixel_to_point(depth_intrinsics, obj_pixel, depth_3d)
-                print("Object 3D position w.r.t. camera frame: {}".format(pos_rs))
+                poi_pixel = [int(bbox[0]+0.5*bbox[2]), int(bbox[1]+0.5*bbox[3])]
+                poi_depth = depth_frame.get_distance(poi_pixel[0], poi_pixel[1])
+                poi_rs = rs.rs2_deproject_pixel_to_point(depth_intrinsics, poi_pixel, poi_depth)
+                rospy.logdebug("Object 3D position w.r.t. camera frame: {}".format(poi_rs))
                 transfrom = iiwa.tf_listener.getLatestCommonTime('/iiwa_link_0', '/rs_d435')
-                pos_iiwa = PoseStamped()
-                pos_iiwa.header.frame_id = 'rs_d435'
-                pos_iiwa.pose.orientation.w = 1.
-                pos_iiwa.pose.position.x = pos_rs[0]
-                pos_iiwa.pose.position.y = pos_rs[1]
-                pos_iiwa.pose.position.z = pos_rs[2]
-                point_in_iiwa = iiwa.tf_listener.transformPose('/iiwa_link_0', pos_iiwa)
+                pos_rs = PoseStamped()
+                pos_rs.header.frame_id = 'rs_d435'
+                pos_rs.pose.orientation.w = 1.
+                pos_rs.pose.position.x = poi_rs[0]
+                pos_rs.pose.position.y = poi_rs[1]
+                pos_rs.pose.position.z = poi_rs[2]
+                pos_iiwa = iiwa.tf_listener.transformPose('/iiwa_link_0', pos_rs)
                 rospy.loginfo("Object 3D position w.r.t. iiwa base from: {}".format(pos_iiwa.pose.position))
-
+            # display image stream, press 'ESC' or 'q' to terminate
             cv2.imshow(video_name, frame)
             key = cv2.waitKey(40)
             if key in (27, ord("q")):

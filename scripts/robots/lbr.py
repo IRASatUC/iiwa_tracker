@@ -15,6 +15,6 @@ class iiwaRobot():
         # tf listener
         self.tf_listener = tf.TransformListener()
 
-    def pub_joint_pos(self, joint_position=JointPosition):
+    def pub_joint_pos(self, joint_position=JointPosition()):
         self.jpos_publisher.publish(joint_position)
         rospy.loginfo("iiwa is moving to {}".format(joint_position))
