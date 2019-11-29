@@ -17,20 +17,6 @@ This repo uses a [KUKA iiwa](https://www.kuka.com/en-us/products/robotics-system
 3. Start **ROSSmartServo** application on Kuka's smartPAD
 4. run `rostopic list` to verify everything looks similar to the following:
 ```console
-/clock
-/gazebo/link_states
-/gazebo/model_states
-/gazebo/parameter_descriptions
-/gazebo/parameter_updates
-/gazebo/set_link_state
-/gazebo/set_model_state
-/iiwa/PositionJointInterface_trajectory_controller/command
-/iiwa/PositionJointInterface_trajectory_controller/follow_joint_trajectory/cancel
-/iiwa/PositionJointInterface_trajectory_controller/follow_joint_trajectory/feedback
-/iiwa/PositionJointInterface_trajectory_controller/follow_joint_trajectory/goal
-/iiwa/PositionJointInterface_trajectory_controller/follow_joint_trajectory/result
-/iiwa/PositionJointInterface_trajectory_controller/follow_joint_trajectory/status
-/iiwa/PositionJointInterface_trajectory_controller/state
 /iiwa/action/move_along_spline/cancel
 /iiwa/action/move_along_spline/feedback
 /iiwa/action/move_along_spline/goal
