@@ -24,6 +24,7 @@ from pysot.tracker.tracker_builder import build_tracker
 
 import rospy
 import tf
+from robots.lbr import iiwaRobot
 from geometry_msgs.msg import PoseStamped
 from iiwa_msgs.msg import JointPosition
 
@@ -41,27 +42,13 @@ config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
 config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
 pipeline.start(config)
 
-class iiwaRobot():
-    def __init__(self):
-        rospy.init_node('iiwa_node',anonymous=True, log_level=rospy.DEBUG)
-        self.jpos_publisher = rospy.Publisher('/iiwa/command/JointPosition', JointPosition, queue_size=1)
-        self.rate = rospy.Rate(30.0)
-        # realsense frame listener
-        self.rs_ls = tf.TransformListener()
-
-    def pub_joint_pos(self, joint_position):
-        if not joint_position:
-            joint_position = JointPosition()
-        self.jpos_publisher.publish(joint_position)
-        rospy.loginfo("iiwa is moving to {}".format(joint_position))
-
 
 def main():
     # initialize
     iiwa = iiwaRobot()
     for _ in range(5):
         iiwa.pub_joint_pos(JointPosition())
-    time.sleep(5)
+        time.sleep(.1)
     # get ready
     iiwa.pub_joint_pos(JOINT_PERCH)
     time.sleep(5)
