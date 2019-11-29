@@ -13,10 +13,8 @@ class iiwaRobot():
         self.jpos_publisher = rospy.Publisher('/iiwa/command/JointPosition', JointPosition, queue_size=1)
         self.rate = rospy.Rate(30.0)
         # tf listener
-        self.rs_ls = tf.TransformListener()
+        self.tf_listener = tf.TransformListener()
 
-    def pub_joint_pos(self, joint_position):
-        if not joint_position:
-            joint_position = JointPosition()
+    def pub_joint_pos(self, joint_position=JointPosition):
         self.jpos_publisher.publish(joint_position)
         rospy.loginfo("iiwa is moving to {}".format(joint_position))
