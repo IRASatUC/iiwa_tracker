@@ -15,7 +15,7 @@ from iiwa_msgs.msg import JointQuantity, JointPosition, CartesianPose
 
 class iiwaRobot(object):
     def __init__(self):
-        rospy.init_node('iiwa_node',anonymous=True, log_level=rospy.DEBUG)
+        rospy.init_node('iiwa_node',anonymous=True, log_level=rospy.INFO)
         self.rate = rospy.Rate(30.0)
         self.joint_position = JointQuantity()
         self.cartesian_pose = Pose()
@@ -45,7 +45,7 @@ class iiwaRobot(object):
                 self.rate.sleep()
         else:
             self.carte_pose_publisher.publish(cartesian_pose)
-        rospy.logdebug("robot toward: {}".format(cartesian_pose))
+        rospy.loginfo("robot toward: {}".format(cartesian_pose))
 
     def goal_approximation(self, mode, threshold=0.01):
         if mode=='cp':

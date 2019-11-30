@@ -30,7 +30,7 @@ from iiwa_msgs.msg import JointPosition
 
 # iiwa's initial perching pose
 JOINT_PERCH = JointPosition()
-JOINT_PERCH.position.a2 = pi/6
+JOINT_PERCH.position.a2 = pi/6+0.1
 JOINT_PERCH.position.a4 = -pi/3
 JOINT_PERCH.position.a6 = pi/3
 
@@ -39,9 +39,9 @@ def main():
     iiwa = iiwaRobot()
     time.sleep(4) # allow iiwa taking some time to wake up
     # zero joints
-    for _ in range(20):
-        iiwa.move_joint()
-    time.sleep(4)
+    # for _ in range(20):
+    #     iiwa.move_joint()
+    # time.sleep(4)
     # iiwa get ready
     for _ in range(20):
         iiwa.move_joint(JOINT_PERCH)
@@ -69,8 +69,9 @@ def main():
     video_name = 'D435_color'
     cv2.namedWindow(video_name, cv2.WND_PROP_FULLSCREEN)
     first_frame = True
-    fin_flag = False
-    while not fin_flag:
+    FIN_FLAG = False
+    GOAL_SET_FLAG = False
+    while not FIN_FLAG:
         # wait image stream and select object of interest
         frames = pipeline.wait_for_frames()
         color_frame = frames.get_color_frame()
@@ -100,21 +101,33 @@ def main():
         poi_depth = depth_frame.get_distance(poi_pixel[0], poi_pixel[1])
         poi_rs = rs.rs2_deproject_pixel_to_point(depth_intrinsics, poi_pixel, poi_depth)
         rospy.logdebug("Object 3D position w.r.t. camera frame: {}".format(poi_rs))
-        transfrom = iiwa.tf_listener.getLatestCommonTime('/iiwa_link_0', '/rs_d435')
-        pos_rs = PoseStamped()
-        pos_rs.header.frame_id = 'rs_d435'
-        pos_rs.pose.orientation.w = 1.
-        pos_rs.pose.position.x = poi_rs[0]
-        pos_rs.pose.position.y = poi_rs[1]
-        pos_rs.pose.position.z = poi_rs[2]
-        pos_iiwa = iiwa.tf_listener.transformPose('/iiwa_link_0', pos_rs)
-        rospy.loginfo("Object 3D position w.r.t. iiwa base from: {}".format(pos_iiwa.pose.position))
+        if not np.allclose(poi_rs, np.zeros(3)):
+            # compute transformed poi w.r.t. iiwa_link_0
+            transfrom = iiwa.tf_listener.getLatestCommonTime('/iiwa_link_0', '/rs_d435')
+            pos_rs = PoseStamped()
+            pos_rs.header.frame_id = 'rs_d435'
+            pos_rs.pose.orientation.w = 1.
+            pos_rs.pose.position.x = poi_rs[0]
+            pos_rs.pose.position.y = poi_rs[1]
+            pos_rs.pose.position.z = poi_rs[2]
+            pos_iiwa = iiwa.tf_listener.transformPose('/iiwa_link_0', pos_rs)
+            rospy.loginfo("Object 3D position w.r.t. iiwa base from: {}".format(pos_iiwa.pose.position))
+            # set cartesian goal
+            iiwa.goal_carte_pose.pose.position = pos_iiwa.pose.position
+            iiwa.goal_carte_pose.pose.orientation = iiwa.cartesian_pose.orientation
+            iiwa.goal_carte_pose.header.frame_id = 'iiwa_link_0'
+            FIN_FLAG = True
+            GOAL_SET_FLAG = True
+
         # display image stream, press 'ESC' or 'q' to terminate
         cv2.imshow(video_name, frame)
         key = cv2.waitKey(40)
         if key in (27, ord("q")):
             break
+
+    iiwa.move_cartesian(cartesian_pose=iiwa.goal_carte_pose, commit=True)
     pipeline.stop()
+
 if __name__ == '__main__':
     try:
         main()
