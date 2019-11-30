@@ -40,11 +40,11 @@ def main():
     time.sleep(4) # allow iiwa taking some time to wake up
     # zero joints
     for _ in range(20):
-        iiwa.pub_joint_pos()
+        iiwa.move_joint()
     time.sleep(4)
     # iiwa get ready
     for _ in range(20):
-        iiwa.pub_joint_pos(JOINT_PERCH)
+        iiwa.move_joint(JOINT_PERCH)
     time.sleep(4)
     rospy.loginfo("iiwa is ready")
     # Configure realsense D435 depth and color streams
