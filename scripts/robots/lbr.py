@@ -60,7 +60,7 @@ class iiwaRobot(object):
     def move_cartesian(self, cartesian_pose, commit=False):
         assert cartesian_pose._type == 'geometry_msgs/PoseStamped'
         self.carte_pose_publisher.publish(cartesian_pose)
-        rospy.loginfo("iiwa is moving to cartesian pose: \n{}".format(cartesian_pose))
+        rospy.logwarn("iiwa is moving to cartesian pose: \n{}".format(cartesian_pose))
         if commit:
             num_stones = 0
             while not self.goal_approximation(type='cp'):
@@ -76,7 +76,7 @@ class iiwaRobot(object):
                 self.carte_pose_publisher.publish(cartesian_pose)
                 self.rate.sleep()
 
-    def goal_approximation(self, type, threshold=1e-04):
+    def goal_approximation(self, type, threshold=1e-03):
         if type=='jp':
             goal_jpos = np.array([
                 self.goal_joint_pos.position.a1,
@@ -96,9 +96,8 @@ class iiwaRobot(object):
                 self.joint_position.a6,
                 self.joint_position.a7
             ])
-            dist_jpos = np.linalg.norm(goal_jpos-curr_jpos)
 
-            return dist_jpos <= threshold
+            return np.allclose(goal_jpos,curr_jpos, atol=threshold)
         elif type=='cp':
             # convert pose to array
             goal_cpos = np.array([

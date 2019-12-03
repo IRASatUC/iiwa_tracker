@@ -30,9 +30,20 @@ from iiwa_msgs.msg import JointPosition
 
 # iiwa's initial perching pose
 JOINT_PERCH = JointPosition()
-JOINT_PERCH.position.a2 = pi/6+0.1
+JOINT_PERCH.position.a2 = pi/6
 JOINT_PERCH.position.a4 = -pi/3
 JOINT_PERCH.position.a6 = pi/3
+
+def vec_to_quat(vector):
+    """
+    Compute quaternion based on known vector
+    """
+    gamma = np.arcsin(-vector[1])
+    beta = np.arcsin(vector[0]/np.cos(gamma))
+    alpha = 0
+    quat = tf.transformations.quaternion_from_euler(gamma, beta, alpha, 'rxyz')
+
+    return quat
 
 def main():
     # instantiate iiwa
@@ -83,42 +94,52 @@ def main():
                 exit()
             tracker.init(frame, init_rect)
             first_frame = False
-        # start tracking
-        outputs = tracker.track(frame)
-        polygon = np.array(outputs['polygon']).astype(np.int32)
-        cv2.polylines(frame, [polygon.reshape((-1, 1, 2))],
-                      True, (0, 255, 0), 3)
-        mask = ((outputs['mask'] > cfg.TRACK.MASK_THERSHOLD) * 255)
-        mask = mask.astype(np.uint8)
-        mask = np.stack([mask, mask*255, mask]).transpose(1, 2, 0)
-        frame = cv2.addWeighted(frame, 0.77, mask, 0.23, -1)
-        bbox = list(map(int, outputs['bbox']))
-        poi_pixel = [int(bbox[0]+0.5*bbox[2]), int(bbox[1]+0.5*bbox[3])]
-        poi_depth = depth_frame.get_distance(poi_pixel[0], poi_pixel[1])
-        poi_rs = rs.rs2_deproject_pixel_to_point(depth_intrinsics, poi_pixel, poi_depth)
-        print("Object 3D position w.r.t. camera frame: {}".format(poi_rs))
-        # if not np.allclose(poi_rs, np.zeros(3)):
-        #     # compute transformed poi w.r.t. iiwa_link_0
-        #     transfrom = iiwa.tf_listener.getLatestCommonTime('/iiwa_link_0', '/rs_d435')
-        #     pos_rs = PoseStamped()
-        #     pos_rs.header.frame_id = 'rs_d435'
-        #     pos_rs.pose.orientation.w = 1.
-        #     pos_rs.pose.position.x = poi_rs[0]
-        #     pos_rs.pose.position.y = poi_rs[1]
-        #     pos_rs.pose.position.z = poi_rs[2]
-        #     pos_iiwa = iiwa.tf_listener.transformPose('/iiwa_link_0', pos_rs)
-        #     rospy.loginfo("Object 3D position w.r.t. iiwa base from: {}".format(pos_iiwa.pose.position))
-        #     # set cartesian goal
-        #     iiwa.goal_carte_pose.pose.position.x = pos_iiwa.pose.position.x
-        #     iiwa.goal_carte_pose.pose.position.y = pos_iiwa.pose.position.y
-        #     iiwa.goal_carte_pose.pose.position.z = pos_iiwa.pose.position.z
-        #     iiwa.goal_carte_pose.pose.orientation.x = iiwa.cartesian_pose.orientation.x
-        #     iiwa.goal_carte_pose.pose.orientation.y = iiwa.cartesian_pose.orientation.y
-        #     iiwa.goal_carte_pose.pose.orientation.z = iiwa.cartesian_pose.orientation.z
-        #     iiwa.goal_carte_pose.pose.orientation.w = iiwa.cartesian_pose.orientation.w
-        #     iiwa.goal_carte_pose.header.frame_id = 'iiwa_link_0'
-        #     FIN_FLAG = True
-        #     GOAL_SET_FLAG = True
+        else:
+            # start tracking
+            outputs = tracker.track(frame)
+            polygon = np.array(outputs['polygon']).astype(np.int32)
+            cv2.polylines(frame, [polygon.reshape((-1, 1, 2))],
+                          True, (0, 255, 0), 3)
+            mask = ((outputs['mask'] > cfg.TRACK.MASK_THERSHOLD) * 255)
+            mask = mask.astype(np.uint8)
+            mask = np.stack([mask, mask*255, mask]).transpose(1, 2, 0)
+            frame = cv2.addWeighted(frame, 0.77, mask, 0.23, -1)
+            bbox = list(map(int, outputs['bbox']))
+            poi_pixel = [int(bbox[0]+0.5*bbox[2]), int(bbox[1]+0.5*bbox[3])]
+            poi_depth = depth_frame.get_distance(poi_pixel[0], poi_pixel[1])
+            poi_rs = rs.rs2_deproject_pixel_to_point(depth_intrinsics, poi_pixel, poi_depth)
+            print("Object 3D position w.r.t. camera frame: {}".format(poi_rs))
+            if not np.allclose(poi_rs, np.zeros(3)):
+                # compute transformed poi w.r.t. iiwa_link_0
+                transfrom = iiwa.tf_listener.getLatestCommonTime('/iiwa_link_0', '/rs_d435')
+                pos_rs = PoseStamped()
+                pos_rs.header.frame_id = 'rs_d435'
+                pos_rs.pose.orientation.w = 1.
+                pos_rs.pose.position.x = poi_rs[0]
+                pos_rs.pose.position.y = poi_rs[1]
+                pos_rs.pose.position.z = poi_rs[2]
+                pos_iiwa = iiwa.tf_listener.transformPose('/iiwa_link_0', pos_rs)
+                rospy.loginfo("Object 3D position w.r.t. iiwa base from: {}\n ee w.r.t. iiwa base: {}".format(pos_iiwa.pose.position, iiwa.cartesian_pose.position))
+                vec_ee_poi = np.array([pos_iiwa.pose.position.x,       pos_iiwa.pose.position.y,pos_iiwa.pose.position.z]) - np.array([iiwa.cartesian_pose.position.x,iiwa.cartesian_pose.position.y,iiwa.cartesian_pose.position.z])
+                goal_pos = np.array([pos_iiwa.pose.position.x,       pos_iiwa.pose.position.y,pos_iiwa.pose.position.z]) - vec_ee_poi/np.linalg.norm(vec_ee_poi)*0.167
+                # set cartesian goal
+                # iiwa.goal_carte_pose.pose.position.x = pos_iiwa.pose.position.x
+                # iiwa.goal_carte_pose.pose.position.y = pos_iiwa.pose.position.y
+                # iiwa.goal_carte_pose.pose.position.z = pos_iiwa.pose.position.z
+                iiwa.goal_carte_pose.pose.position.x = goal_pos[0]
+                iiwa.goal_carte_pose.pose.position.y = goal_pos[1]
+                iiwa.goal_carte_pose.pose.position.z = goal_pos[2]
+                # iiwa.goal_carte_pose.pose.orientation.x = goal_quat[0]
+                # iiwa.goal_carte_pose.pose.orientation.y = goal_quat[1]
+                # iiwa.goal_carte_pose.pose.orientation.z = goal_quat[2]
+                # iiwa.goal_carte_pose.pose.orientation.w = goal_quat[3]
+                iiwa.goal_carte_pose.pose.orientation.x = iiwa.cartesian_pose.orientation.x
+                iiwa.goal_carte_pose.pose.orientation.y = iiwa.cartesian_pose.orientation.y
+                iiwa.goal_carte_pose.pose.orientation.z = iiwa.cartesian_pose.orientation.z
+                iiwa.goal_carte_pose.pose.orientation.w = iiwa.cartesian_pose.orientation.w
+                iiwa.goal_carte_pose.header.frame_id = 'iiwa_link_0'
+                FIN_FLAG = True
+                GOAL_SET_FLAG = True
 
         # display image stream, press 'ESC' or 'q' to terminate
         cv2.imshow(video_name, frame)
@@ -127,7 +148,10 @@ def main():
             break
 
     iiwa.move_cartesian(cartesian_pose=iiwa.goal_carte_pose, commit=True)
+    time.sleep(2)
+    iiwa.move_joint(joint_position=JOINT_PERCH, commit=True)
     pipeline.stop()
+    rospy.loginfo("Finished")
 
 if __name__ == '__main__':
     try:

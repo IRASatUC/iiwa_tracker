@@ -86,7 +86,7 @@ def main():
                 poi_pixel = [int(bbox[0]+0.5*bbox[2]), int(bbox[1]+0.5*bbox[3])]
                 poi_depth = depth_frame.get_distance(poi_pixel[0], poi_pixel[1])
                 poi_rs = rs.rs2_deproject_pixel_to_point(depth_intrinsics, poi_pixel, poi_depth)
-                rospy.logdebug("Object 3D position w.r.t. camera frame: {}".format(poi_rs))
+                print("Object 3D position w.r.t. camera frame: {}".format(poi_rs))
                 # transfrom = iiwa.tf_listener.getLatestCommonTime('/iiwa_link_0', '/rs_d435')
                 # pos_rs = PoseStamped()
                 # pos_rs.header.frame_id = 'rs_d435'
