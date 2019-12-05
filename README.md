@@ -69,7 +69,7 @@ roslaunch iiwa_gazebo iiwa_gazebo_with_sunrise.launch
 ```console
 rosrun iiwa_tracker poker.py
 ```
-> make sure the script is executable by running `chmod +x $iiwa_tracker/scripts/siammask_dipper.py`
+> make sure the script is executable by running `chmod +x $iiwa_tracker/scripts/poker.py`
 
 
 ## Contributors
