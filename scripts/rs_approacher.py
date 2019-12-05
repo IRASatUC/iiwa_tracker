@@ -24,26 +24,39 @@ from pysot.tracker.tracker_builder import build_tracker
 import rospy
 import tf
 from robots.lbr import iiwaRobot
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, Quaternion
 from iiwa_msgs.msg import JointPosition
 
 
 # iiwa's initial perching pose
 JOINT_PERCH = JointPosition()
-JOINT_PERCH.position.a2 = pi/6
-JOINT_PERCH.position.a4 = -pi/3
-JOINT_PERCH.position.a6 = pi/3
+JOINT_PERCH.position.a1 = -pi/6
+JOINT_PERCH.position.a2 = pi/3
+JOINT_PERCH.position.a3 = pi/6
+JOINT_PERCH.position.a4 = -pi/2
+JOINT_PERCH.position.a5 = -pi/6
+JOINT_PERCH.position.a6 = -pi/4
+JOINT_PERCH.position.a7 = -pi/6
 
-def vec_to_quat(vector):
+
+def quat_from_vecs(vec_0, vec_1):
     """
-    Compute quaternion based on known vector
+    Compute quaternion from two known vectors
     """
-    gamma = np.arcsin(-vector[1])
-    beta = np.arcsin(vector[0]/np.cos(gamma))
-    alpha = 0
-    quat = tf.transformations.quaternion_from_euler(gamma, beta, alpha, 'rxyz')
+    quat = Quaternion()
+    norms = np.sqrt(np.linalg.norm(vec_0)*np.linalg.norm(vec_1)) # |u||v|
+    cp = np.cross(vec_0, vec_1) # cross product
+    w = norms + np.dot(vec_0,vec_1)
+    x, y, z = cp[0], cp[1], cp[2]
+    q = np.array([x,y,z,w])
+    norm_q = q/np.linalg.norm(q)
+    quat.x = norm_q[0]
+    quat.y = norm_q[1]
+    quat.z = norm_q[2]
+    quat.w = norm_q[3]
 
     return quat
+
 
 def main():
     # instantiate iiwa
@@ -110,7 +123,7 @@ def main():
             poi_rs = rs.rs2_deproject_pixel_to_point(depth_intrinsics, poi_pixel, poi_depth)
             print("Object 3D position w.r.t. camera frame: {}".format(poi_rs))
             if not np.allclose(poi_rs, np.zeros(3)):
-                # compute transformed poi w.r.t. iiwa_link_0
+                # compute transformed position of poi w.r.t. iiwa_link_0
                 transfrom = iiwa.tf_listener.getLatestCommonTime('/iiwa_link_0', '/rs_d435')
                 pos_rs = PoseStamped()
                 pos_rs.header.frame_id = 'rs_d435'
@@ -120,15 +133,18 @@ def main():
                 pos_rs.pose.position.z = poi_rs[2]
                 pos_iiwa = iiwa.tf_listener.transformPose('/iiwa_link_0', pos_rs)
                 rospy.loginfo("Object 3D position w.r.t. iiwa base from: {}\n ee w.r.t. iiwa base: {}".format(pos_iiwa.pose.position, iiwa.cartesian_pose.position))
-                vec_ee_poi = np.array([pos_iiwa.pose.position.x,       pos_iiwa.pose.position.y,pos_iiwa.pose.position.z]) - np.array([iiwa.cartesian_pose.position.x,iiwa.cartesian_pose.position.y,iiwa.cartesian_pose.position.z])
-                goal_pos = np.array([pos_iiwa.pose.position.x,       pos_iiwa.pose.position.y,pos_iiwa.pose.position.z]) - vec_ee_poi/np.linalg.norm(vec_ee_poi)*0.167
+                # vec_ee_poi = np.array([pos_iiwa.pose.position.x,       pos_iiwa.pose.position.y,pos_iiwa.pose.position.z]) - np.array([iiwa.cartesian_pose.position.x,iiwa.cartesian_pose.position.y,iiwa.cartesian_pose.position.z])
+                # goal_pos = np.array([pos_iiwa.pose.position.x,       pos_iiwa.pose.position.y,pos_iiwa.pose.position.z]) - vec_ee_poi/np.linalg.norm(vec_ee_poi)*0.167
+                # # compute orientation w.r.t. iiwa_link_0
+                # goal_quat = quat_from_vecs(vec_ee_poi, np.array([0,0,1]))
                 # set cartesian goal
-                # iiwa.goal_carte_pose.pose.position.x = pos_iiwa.pose.position.x
-                # iiwa.goal_carte_pose.pose.position.y = pos_iiwa.pose.position.y
-                # iiwa.goal_carte_pose.pose.position.z = pos_iiwa.pose.position.z
-                iiwa.goal_carte_pose.pose.position.x = goal_pos[0]
-                iiwa.goal_carte_pose.pose.position.y = goal_pos[1]
-                iiwa.goal_carte_pose.pose.position.z = goal_pos[2]
+                iiwa.goal_carte_pose.pose.position.x = pos_iiwa.pose.position.x
+                iiwa.goal_carte_pose.pose.position.y = pos_iiwa.pose.position.y
+                iiwa.goal_carte_pose.pose.position.z = pos_iiwa.pose.position.z
+                # iiwa.goal_carte_pose.pose.position.x = goal_pos[0]
+                # iiwa.goal_carte_pose.pose.position.y = goal_pos[1]
+                # iiwa.goal_carte_pose.pose.position.z = goal_pos[2]
+                # iiwa.goal_carte_pose.pose.orientation = goal_quat
                 # iiwa.goal_carte_pose.pose.orientation.x = goal_quat[0]
                 # iiwa.goal_carte_pose.pose.orientation.y = goal_quat[1]
                 # iiwa.goal_carte_pose.pose.orientation.z = goal_quat[2]
