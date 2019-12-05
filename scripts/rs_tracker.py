@@ -1,83 +1,66 @@
+#!/usr/bin/env python
+""" Transform POI from realsense frame into iiwa frame
+    Pre-requisite:
+        roslaunch iiwa_gazebo iiwa_gazebo_with_sunrise.launch (tf defined in that package)
+"""
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import sys
 import os
-import argparse
+import time
 
 import cv2
 import pyrealsense2 as rs
-import torch
 import numpy as np
 from glob import glob
+
+import torch
 
 from pysot.core.config import cfg
 from pysot.models.model_builder import ModelBuilder
 from pysot.tracker.tracker_builder import build_tracker
 
-torch.set_num_threads(1)
+import rospy
+import tf
+from robots.lbr import iiwaRobot
+from geometry_msgs.msg import PoseStamped
 
-parser = argparse.ArgumentParser(description='tracking demo')
-parser.add_argument('--config', type=str, help='config file')
-parser.add_argument('--snapshot', type=str, help='model name')
-parser.add_argument('--video_name', default='', type=str,
-                    help='videos or image files')
-args = parser.parse_args()
-
-
-# Configure depth and color streams
-pipeline = rs.pipeline()
-config = rs.config()
-config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
-config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
-# Start streaming
-pipeline.start(config)
-
-def get_frames():
-    while True:
-        # wait for a coherent pair of frames: depth and color
-        frames = pipeline.wait_for_frames()
-        color_frame = frame.get_color_frame()
-        # convert images to numpy arrarys
-        if color_frame:
-            color_image = np.asanyarray(color_frame.get_data())
-            yield color_image
-        else:
-            break
 
 def main():
-    # load config
-    cfg.merge_from_file(args.config)
+    # Configure realsense D435 depth and color streams
+    pipeline = rs.pipeline()
+    config = rs.config()
+    config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
+    config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
+    pipeline.start(config)
+    # load siammask config
+    cfg.merge_from_file(sys.path[0]+"/siammask_r50_l3/config.yaml")
     cfg.CUDA = torch.cuda.is_available()
     device = torch.device('cuda' if cfg.CUDA else 'cpu')
-
     # create model
     model = ModelBuilder()
-
     # load model
-    model.load_state_dict(torch.load(args.snapshot,
+    model.load_state_dict(torch.load(sys.path[0]+"/siammask_r50_l3/model.pth",
         map_location=lambda storage, loc: storage.cpu()))
     model.eval().to(device)
-
     # build tracker
     tracker = build_tracker(model)
-
+    # label object
     first_frame = True
-    if args.video_name:
-        video_name = args.video_name.split('/')[-1].split('.')[0]
-    else:
-        video_name = 'realsense D435'
+    video_name = 'realsense_D435'
     cv2.namedWindow(video_name, cv2.WND_PROP_FULLSCREEN)
+    # begin tracking
     while True:
         frames = pipeline.wait_for_frames()
         color_frame = frames.get_color_frame()
         depth_frame = frames.get_depth_frame()
-        depth_intrin = depth_frame.profile.as_video_stream_profile().intrinsics
+        depth_intrinsics = rs.video_stream_profile(depth_frame.profile).get_intrinsics()
         # convert image to numpy arrays
         if color_frame:
             frame = np.asanyarray(color_frame.get_data())
-
         if first_frame:
             try:
                 init_rect = cv2.selectROI(video_name, frame, False, False)
@@ -85,6 +68,7 @@ def main():
                 exit()
             tracker.init(frame, init_rect)
             first_frame = False
+        # start tracking
         else:
             outputs = tracker.track(frame)
             if 'polygon' in outputs:
@@ -95,19 +79,21 @@ def main():
                 mask = mask.astype(np.uint8)
                 mask = np.stack([mask, mask*255, mask]).transpose(1, 2, 0)
                 frame = cv2.addWeighted(frame, 0.77, mask, 0.23, -1)
-            else:
                 bbox = list(map(int, outputs['bbox']))
-                cv2.rectangle(frame, (bbox[0], bbox[1]),
-                              (bbox[0]+bbox[2], bbox[1]+bbox[3]),
-                              (0, 255, 0), 3)
-                x_of_obj = bbox[0]+0.5*bbox[2]
-                y_of_obj = bbox[1]+0.5*bbox[3]
-
-            # depth_3d = depth_frame.get_distance(int(x_of_obj), int(y_of_obj))
-            # point3d = rs.rs2_deproject_pixel_to_point(depth_intrin, depth_pixel, depth_3d)
+                poi_pixel = [int(bbox[0]+0.5*bbox[2]), int(bbox[1]+0.5*bbox[3])]
+                poi_depth = depth_frame.get_distance(poi_pixel[0], poi_pixel[1])
+                poi_rs = rs.rs2_deproject_pixel_to_point(depth_intrinsics, poi_pixel, poi_depth)
+                print("Object 3D position w.r.t. camera frame: {}".format(poi_rs))
+            # display image stream, press 'ESC' or 'q' to terminate
             cv2.imshow(video_name, frame)
-            cv2.waitKey(40)
+            key = cv2.waitKey(40)
+            if key in (27, ord("q")):
+                break
 
+    pipeline.stop()
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except rospy.ROSInterruptException:
+        pass

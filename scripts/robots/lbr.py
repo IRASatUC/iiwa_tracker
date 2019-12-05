@@ -35,6 +35,7 @@ class iiwaRobot(object):
         rospy.Subscriber('iiwa/state/CartesianPose', CartesianPose, self._cpose_cb)
         # subscriber
         rospy.Subscriber('iiwa/state/JointVelocity', JointVelocity, self._jvel_cb)
+        # TODO: check system ready
 
         super(iiwaRobot, self).__init__()
 
@@ -46,7 +47,7 @@ class iiwaRobot(object):
             num_stones = 0
             while not self.goal_approximation(type='jp'):
                 rospy.logdebug("Goal not reached yet...")
-                if np.allclose(utils.jq_to_array(self.joint_velocity), np.zeros(7),atol=1e-04):
+                if np.allclose(utils.jq_to_array(self.joint_velocity), np.zeros(7),atol=1e-03):
                     num_stones += 1
                 else:
                     num_stones = 0
