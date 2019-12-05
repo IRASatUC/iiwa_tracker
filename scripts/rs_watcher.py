@@ -31,8 +31,8 @@ from geometry_msgs.msg import PoseStamped
 
 def main():
     # instantiate iiwa
-    iiwa = iiwaRobot()
-    time.sleep(4) # allow iiwa taking some time to wake up
+    # iiwa = iiwaRobot()
+    # time.sleep(4) # allow iiwa taking some time to wake up
     # Configure realsense D435 depth and color streams
     pipeline = rs.pipeline()
     config = rs.config()
@@ -86,16 +86,16 @@ def main():
                 poi_pixel = [int(bbox[0]+0.5*bbox[2]), int(bbox[1]+0.5*bbox[3])]
                 poi_depth = depth_frame.get_distance(poi_pixel[0], poi_pixel[1])
                 poi_rs = rs.rs2_deproject_pixel_to_point(depth_intrinsics, poi_pixel, poi_depth)
-                rospy.logdebug("Object 3D position w.r.t. camera frame: {}".format(poi_rs))
-                transfrom = iiwa.tf_listener.getLatestCommonTime('/iiwa_link_0', '/rs_d435')
-                pos_rs = PoseStamped()
-                pos_rs.header.frame_id = 'rs_d435'
-                pos_rs.pose.orientation.w = 1.
-                pos_rs.pose.position.x = poi_rs[0]
-                pos_rs.pose.position.y = poi_rs[1]
-                pos_rs.pose.position.z = poi_rs[2]
-                pos_iiwa = iiwa.tf_listener.transformPose('/iiwa_link_0', pos_rs)
-                rospy.loginfo("Object 3D position w.r.t. iiwa base from: {}".format(pos_iiwa.pose.position))
+                print("Object 3D position w.r.t. camera frame: {}".format(poi_rs))
+                # transfrom = iiwa.tf_listener.getLatestCommonTime('/iiwa_link_0', '/rs_d435')
+                # pos_rs = PoseStamped()
+                # pos_rs.header.frame_id = 'rs_d435'
+                # pos_rs.pose.orientation.w = 1.
+                # pos_rs.pose.position.x = poi_rs[0]
+                # pos_rs.pose.position.y = poi_rs[1]
+                # pos_rs.pose.position.z = poi_rs[2]
+                # pos_iiwa = iiwa.tf_listener.transformPose('/iiwa_link_0', pos_rs)
+                # rospy.loginfo("Object 3D position w.r.t. iiwa base from: {}".format(pos_iiwa.pose.position))
             # display image stream, press 'ESC' or 'q' to terminate
             cv2.imshow(video_name, frame)
             key = cv2.waitKey(40)
