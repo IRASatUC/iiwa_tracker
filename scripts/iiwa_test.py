@@ -58,13 +58,20 @@ iiwa.goal_carte_pose.header.frame_id = 'iiwa_link_0'
 iiwa.goal_carte_pose.pose.position = C1
 iiwa.goal_carte_pose.pose.orientation = QUAT
 iiwa.move_cartesian(iiwa.goal_carte_pose, commit=True)
+time.sleep(2)
 iiwa.goal_carte_pose.pose.position = C2
 iiwa.goal_carte_pose.pose.orientation = QUAT
 iiwa.move_cartesian(iiwa.goal_carte_pose, commit=True)
+time.sleep(2)
 iiwa.goal_carte_pose.pose.position = C3
 iiwa.goal_carte_pose.pose.orientation = QUAT
 iiwa.move_cartesian(iiwa.goal_carte_pose, commit=True)
+time.sleep(2)
 iiwa.goal_carte_pose.pose.position = C4
+iiwa.goal_carte_pose.pose.orientation = QUAT
+iiwa.move_cartesian(iiwa.goal_carte_pose, commit=True)
+time.sleep(2)
+iiwa.goal_carte_pose.pose.position = C1
 iiwa.goal_carte_pose.pose.orientation = QUAT
 iiwa.move_cartesian(iiwa.goal_carte_pose, commit=True)
 
