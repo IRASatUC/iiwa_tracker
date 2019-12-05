@@ -164,8 +164,8 @@ def main():
             break
 
     iiwa.move_cartesian(cartesian_pose=iiwa.goal_carte_pose, commit=True)
-    time.sleep(2)
-    iiwa.move_joint(joint_position=JOINT_PERCH, commit=True)
+    time.sleep(1)
+    iiwa.move_joint(joint_position=JOINT_PERCH)
     pipeline.stop()
     rospy.loginfo("Finished")
 
