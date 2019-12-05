@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-""" LBR iiwa poke an object tracked by RealSense D435
+""" LBR iiwa track an object on frontal plane
     Depend on:
         roslaunch iiwa_gazebo iiwa_gazebo_with_sunrise.launch (tf defined in 'iiwa_gazebo' package)
 """
