@@ -11,56 +11,70 @@ from numpy import pi
 import rospy
 import tf
 from robots.lbr import iiwaRobot
-from geometry_msgs.msg import Pose, PoseStamped
+from geometry_msgs.msg import Pose, PoseStamped, Point, Quaternion
 from iiwa_msgs.msg import JointQuantity, JointPosition, CartesianPose
 
 from robots import utils
 
 # iiwa's initial perching pose
 JOINT_PERCH = JointPosition()
-JOINT_PERCH.position.a2 = pi/6
-JOINT_PERCH.position.a4 = -pi/3
-JOINT_PERCH.position.a6 = pi/3
+JOINT_PERCH.position.a1 = -24.51/180*pi
+JOINT_PERCH.position.a2 = 31.57/180*pi
+JOINT_PERCH.position.a3 = pi/6
+JOINT_PERCH.position.a4 = -106.86/180*pi
+JOINT_PERCH.position.a5 = -0.51/180*pi
+JOINT_PERCH.position.a6 = -46.06/180*pi
+JOINT_PERCH.position.a7 = -42.96/180*pi
+# square corners
+C1, C2, C3, C4 = Point(), Point(), Point(), Point()
+x = 0.85
+y1, z1 = -0.35, 0.3
+C1.x, C1.y, C1.z = x, y1, z1
+y2, z2 = 0.35, 0.3
+C2.x, C2.y, C2.z = x, y2, z2
+y3, z3 = 0.35, 0.7
+C3.x, C3.y, C3.z = x, y3, z3
+y4, z4 = -0.35, 0.7
+C4.x, C4.y, C4.z = x, y4, z4
+
 
 iiwa = iiwaRobot()
-print(iiwa.joint_position)
 time.sleep(4) # allow iiwa taking some time to wake up
-print(iiwa.joint_position)
-# zero joints
-# for _ in range(20):
-iiwa.move_joint()
-time.sleep(4)
+iiwa.move_joint(commit=True)
+time.sleep(1)
 # iiwa get ready
-# for _ in range(20):
-iiwa.move_joint(JOINT_PERCH)
+iiwa.move_joint(JOINT_PERCH, commit=True)
+print("iiwa is ready")
 time.sleep(4)
-print("READY")
-
+# read TCP orientation
+QUAT = Quaternion()
+QUAT.x = iiwa.cartesian_pose.orientation.x
+QUAT.y = iiwa.cartesian_pose.orientation.y
+QUAT.z = iiwa.cartesian_pose.orientation.z
+QUAT.w = iiwa.cartesian_pose.orientation.w
 print("Current cartesian pose: \n{}".format(iiwa.cartesian_pose))
 # iiwa.goal_carte_pose.pose = iiwa.cartesian_pose
 iiwa.goal_carte_pose.header.frame_id = 'iiwa_link_0'
-iiwa.goal_carte_pose.pose.position.x = iiwa.cartesian_pose.position.x-0.2
-iiwa.goal_carte_pose.pose.position.y = iiwa.cartesian_pose.position.y-0.1
-iiwa.goal_carte_pose.pose.position.z = iiwa.cartesian_pose.position.z+0.2
-iiwa.goal_carte_pose.pose.orientation.x = iiwa.cartesian_pose.orientation.x
-iiwa.goal_carte_pose.pose.orientation.y = iiwa.cartesian_pose.orientation.y
-iiwa.goal_carte_pose.pose.orientation.z = iiwa.cartesian_pose.orientation.z
-iiwa.goal_carte_pose.pose.orientation.w = iiwa.cartesian_pose.orientation.w
+iiwa.goal_carte_pose.pose.position = C1
+iiwa.goal_carte_pose.pose.orientation = QUAT
 iiwa.move_cartesian(iiwa.goal_carte_pose, commit=True)
-# while not iiwa.goal_approximation(type='cp'):
-#     iiwa.move_cartesian(iiwa.goal_carte_pose)
-#     print("iiwa at goal? \n{}".format(iiwa.goal_approximation(type='cp')))
-# print("iiwa at goal? \n{}".format(iiwa.goal_approximation(type='cp')))
+time.sleep(2)
+iiwa.goal_carte_pose.pose.position = C2
+iiwa.goal_carte_pose.pose.orientation = QUAT
+iiwa.move_cartesian(iiwa.goal_carte_pose, commit=True)
+time.sleep(2)
+iiwa.goal_carte_pose.pose.position = C3
+iiwa.goal_carte_pose.pose.orientation = QUAT
+iiwa.move_cartesian(iiwa.goal_carte_pose, commit=True)
+time.sleep(2)
+iiwa.goal_carte_pose.pose.position = C4
+iiwa.goal_carte_pose.pose.orientation = QUAT
+iiwa.move_cartesian(iiwa.goal_carte_pose, commit=True)
+time.sleep(2)
+iiwa.goal_carte_pose.pose.position = C1
+iiwa.goal_carte_pose.pose.orientation = QUAT
+iiwa.move_cartesian(iiwa.goal_carte_pose, commit=True)
 
-# iiwa.goal_carte_pose.pose.position.x += 0.2
-# iiwa.goal_carte_pose.pose.position.y += 0.2
-# iiwa.goal_carte_pose.pose.position.z -= 0.2
-# iiwa.move_cartesian(iiwa.goal_carte_pose, commit=True)
-# while not iiwa.goal_approximation(type='cp'):
-#     print("Stoned: {}".format(np.allclose(utils.jq_to_array(iiwa.joint_velocity), np.zeros(7),atol=1e-04)))
-#
-# while not rospy.is_shutdown():
-#     iiwa.goal_carte_pose = PoseStamped()
-#     iiwa.goal_carte_pose.pose = iiwa.cartesian_pose
-#     # print("Robot joint state: \n{} \nRobot cartesian state: \n{}".format(iiwa.joint_position, iiwa.cartesian_pose))
-#     rospy.logwarn("@Goal? {}".format(iiwa.goal_approximation(type='cp')))
+time.sleep(2)
+iiwa.move_joint(JOINT_PERCH, commit=True)
+print("Finished!")
