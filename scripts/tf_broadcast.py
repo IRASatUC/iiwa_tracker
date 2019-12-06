@@ -7,7 +7,7 @@ import tf
 from math import pi
 
 # child of iiwa_link_0
-YAW, PITCH, ROLL = -pi/2, 0.00, -pi/2+0.03
+YAW, PITCH, ROLL = -pi/2, 0.00, -pi/2
 ROT = tf.transformations.quaternion_from_euler(YAW, PITCH, ROLL, 'rzyx')
 TRANS = (0.208, 0., 0.175)
 

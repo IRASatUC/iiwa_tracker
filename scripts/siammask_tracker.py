@@ -15,7 +15,6 @@ import time
 import cv2
 import pyrealsense2 as rs
 import numpy as np
-from glob import glob
 
 import torch
 
@@ -23,10 +22,6 @@ from pysot.core.config import cfg
 from pysot.models.model_builder import ModelBuilder
 from pysot.tracker.tracker_builder import build_tracker
 
-import rospy
-import tf
-from robots.lbr import iiwaRobot
-from geometry_msgs.msg import PoseStamped
 
 
 def main():
@@ -93,7 +88,4 @@ def main():
     pipeline.stop()
 
 if __name__ == '__main__':
-    try:
-        main()
-    except rospy.ROSInterruptException:
-        pass
+    main()

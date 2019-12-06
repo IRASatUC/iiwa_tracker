@@ -13,7 +13,6 @@ import cv2
 import pyrealsense2 as rs
 import numpy as np
 from numpy import pi
-from glob import glob
 
 import torch
 
@@ -65,7 +64,10 @@ def main():
     config = rs.config()
     config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
     config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
-    pipeline.start(config)
+    profile = pipeline.start(config)
+    # Create an align object
+    align_to = rs.stream.color
+    align = rs.align(align_to)
     # load siammask config
     cfg.merge_from_file(sys.path[0]+"/siammask_r50_l3/config.yaml")
     cfg.CUDA = torch.cuda.is_available()
@@ -85,29 +87,32 @@ def main():
     while True:
         # wait image stream and select object of interest
         frames = pipeline.wait_for_frames()
-        color_frame = frames.get_color_frame()
-        depth_frame = frames.get_depth_frame()
+        # Align the depth frame to color frame
+        aligned_frames = align.process(frames)
+        color_frame = aligned_frames.get_color_frame()
+        depth_frame = aligned_frames.get_depth_frame()
         depth_intrinsics = rs.video_stream_profile(depth_frame.profile).get_intrinsics()
         # convert image to numpy arrays
         if color_frame:
-            frame = np.asanyarray(color_frame.get_data())
+            color_image = np.asanyarray(color_frame.get_data())
+            depth_image = np.asanyarray(depth_frame.get_data())
         if first_frame:
             try:
-                init_rect = cv2.selectROI(video_name, frame, False, False)
+                init_rect = cv2.selectROI(video_name, color_image, False, False)
             except:
                 exit()
-            tracker.init(frame, init_rect)
+            tracker.init(color_image, init_rect)
             first_frame = False
         else:
             # start tracking
-            outputs = tracker.track(frame)
+            outputs = tracker.track(color_image)
             polygon = np.array(outputs['polygon']).astype(np.int32)
-            cv2.polylines(frame, [polygon.reshape((-1, 1, 2))],
+            cv2.polylines(color_image, [polygon.reshape((-1, 1, 2))],
                           True, (0, 255, 0), 3)
             mask = ((outputs['mask'] > cfg.TRACK.MASK_THERSHOLD) * 255)
             mask = mask.astype(np.uint8)
             mask = np.stack([mask, mask*255, mask]).transpose(1, 2, 0)
-            frame = cv2.addWeighted(frame, 0.77, mask, 0.23, -1)
+            color_image = cv2.addWeighted(color_image, 0.77, mask, 0.23, -1)
             bbox = list(map(int, outputs['bbox']))
             poi_pixel = [int(bbox[0]+0.5*bbox[2]), int(bbox[1]+0.5*bbox[3])]
             poi_depth = depth_frame.get_distance(poi_pixel[0], poi_pixel[1])
@@ -133,7 +138,7 @@ def main():
                 iiwa.move_cartesian(cartesian_pose=iiwa.goal_carte_pose)
 
         # display image stream, press 'ESC' or 'q' to terminate
-        cv2.imshow(video_name, frame)
+        cv2.imshow(video_name, color_image)
         key = cv2.waitKey(40)
         if key in (27, ord("q")):
             break
