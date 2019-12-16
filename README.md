@@ -63,7 +63,7 @@ This repo uses a [KUKA iiwa](https://www.kuka.com/en-us/products/robotics-system
 Track a customer selected object using *siammask* algorithm and convert its 3d position into *iiwa*'s base link: `iiwa_link_0`
 1. Launch roscore first,then in another terminal, launch gazebo simulation with *realsense D435*'s transform broadcaster.
 ```console
-roslaunch iiwa_gazebo iiwa_gazebo_with_sunrise.launch
+roslaunch iiwa_tracker iiwa_gazebo.launch gui:=false
 ```
 2. In a new terminal
 ```console
