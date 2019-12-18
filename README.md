@@ -13,7 +13,7 @@ This repo uses a [KUKA iiwa](https://www.kuka.com/en-us/products/robotics-system
 1. Network:
     - ROS machine: 192.168.1.100
     - KUKA iiwa: 192.168.1.160 (>another iiwa's ip is 192.168.1.161)
-2. Launch `roscore`
+2. Run `roscore` or `roslaunch iiwa_tracker iiwa_gazebo.launch`
 3. Start **ROSSmartServo** application on Kuka's smartPAD
 4. run `rostopic list` to verify everything looks similar to the following:
 ```console
