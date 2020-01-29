@@ -120,7 +120,7 @@ def main():
             print("Object 3D position w.r.t. camera frame: {}".format(poi_rs))
             if not np.allclose(poi_rs, np.zeros(3)):
                 # compute transformed position of poi w.r.t. iiwa_link_0
-                transfrom = iiwa.tf_listener.getLatestCommonTime('/iiwa_link_0', '/rs_d435')
+                transfrom = iiwa.tf_listener.getLatestCommonTime('/iiwa_link_ee', '/rs_d435')
                 pos_rs = PoseStamped()
                 pos_rs.header.frame_id = 'rs_d435'
                 pos_rs.pose.orientation.w = 1.

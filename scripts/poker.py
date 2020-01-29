@@ -36,7 +36,7 @@ JOINT_PERCH.position.a3 = pi/6
 JOINT_PERCH.position.a4 = -pi/2
 JOINT_PERCH.position.a5 = -pi/6
 JOINT_PERCH.position.a6 = -pi/4
-JOINT_PERCH.position.a7 = -pi/6
+JOINT_PERCH.position.a7 = -pi/4
 
 
 def quat_from_vecs(vec_0, vec_1):
@@ -66,6 +66,7 @@ def main():
     iiwa.move_joint(commit=True)
     # iiwa get ready
     iiwa.move_joint(JOINT_PERCH, commit=True)
+    time.sleep(2)
     rospy.loginfo("iiwa is ready")
     # Configure realsense D435 depth and color streams
     pipeline = rs.pipeline()

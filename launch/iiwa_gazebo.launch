@@ -18,13 +18,26 @@
     <arg name="tool_name" default="SchunkAndFingers"/>
     <arg name="endpoint_frame" default="TCP"/>
 
-    <!-- Loads the Gazebo world. -->
-    <include file="$(find iiwa_gazebo)/launch/iiwa_world.launch">
-        <arg name="gui" value="false"/>
+    <include file="$(find iiwa_gazebo)/launch/iiwa_gazebo.launch">
         <arg name="hardware_interface" value="$(arg hardware_interface)" />
         <arg name="robot_name" value="$(arg robot_name)" />
         <arg name="model" value="$(arg model)" />
+        <arg name="trajectory" value="$(arg trajectory)" />
     </include>
+
+    <include file="$(find iiwa_control)/launch/iiwa_sunrise.launch">
+        <param name="hardware_interface" value="$(arg hardware_interface)"/>
+        <param name="robot_name" value="$(arg robot_name)"/>
+        <param name="model" value="$(arg model)"/>
+    </include>
+
+    <!-- Loads the Gazebo world. -->
+    <!-- <include file="$(find iiwa_gazebo)/launch/iiwa_world.launch">
+        <arg name="gui" value="true"/>
+        <arg name="hardware_interface" value="$(arg hardware_interface)" />
+        <arg name="robot_name" value="$(arg robot_name)" />
+        <arg name="model" value="$(arg model)" />
+    </include> -->
 
     <!-- Spawn controllers - it uses a JointTrajectoryController -->
     <!-- <group  ns="$(arg robot_name)" if="$(arg trajectory)">
