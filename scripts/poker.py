@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """ LBR iiwa poke an object tracked by RealSense D435
     Depend on:
-        roslaunch iiwa_gazebo iiwa_gazebo_with_sunrise.launch (tf defined in 'iiwa_gazebo' package)
+        roslaunch iiwa_tracker iiwa_gazebo.launch (tf defined )
 """
 from __future__ import absolute_import, division, print_function, unicode_literals
 
@@ -30,13 +30,13 @@ from iiwa_msgs.msg import JointPosition
 
 # iiwa's initial perching pose
 JOINT_PERCH = JointPosition()
-JOINT_PERCH.position.a1 = -pi/6
-JOINT_PERCH.position.a2 = pi/3
-JOINT_PERCH.position.a3 = pi/6
-JOINT_PERCH.position.a4 = -pi/2
-JOINT_PERCH.position.a5 = -pi/6
-JOINT_PERCH.position.a6 = -pi/4
-JOINT_PERCH.position.a7 = -pi/4
+JOINT_PERCH.position.a1 = 0 #-pi/6
+JOINT_PERCH.position.a2 = 0 #pi/3
+JOINT_PERCH.position.a3 = 0 #pi/6
+JOINT_PERCH.position.a4 = -pi/3 #-pi/2
+JOINT_PERCH.position.a5 = 0 #-pi/6OINT_PERCH.position.a1 = -24.51/180*pi
+JOINT_PERCH.position.a6 = pi/2 #-pi/4
+JOINT_PERCH.position.a7 = -pi/6 #-pi/4
 
 
 def quat_from_vecs(vec_0, vec_1):
@@ -140,22 +140,10 @@ def main():
                 pos_rs.pose.position.z = poi_rs[2]
                 pos_iiwa = iiwa.tf_listener.transformPose('/iiwa_link_0', pos_rs)
                 rospy.loginfo("Object 3D position w.r.t. iiwa base from: {}\n ee w.r.t. iiwa base: {}".format(pos_iiwa.pose.position, iiwa.cartesian_pose.position))
-                # vec_ee_poi = np.array([pos_iiwa.pose.position.x,       pos_iiwa.pose.position.y,pos_iiwa.pose.position.z]) - np.array([iiwa.cartesian_pose.position.x,iiwa.cartesian_pose.position.y,iiwa.cartesian_pose.position.z])
-                # goal_pos = np.array([pos_iiwa.pose.position.x,       pos_iiwa.pose.position.y,pos_iiwa.pose.position.z]) - vec_ee_poi/np.linalg.norm(vec_ee_poi)*0.167
-                # # compute orientation w.r.t. iiwa_link_0
-                # goal_quat = quat_from_vecs(vec_ee_poi, np.array([0,0,1]))
                 # set cartesian goal
                 iiwa.goal_carte_pose.pose.position.x = pos_iiwa.pose.position.x
                 iiwa.goal_carte_pose.pose.position.y = pos_iiwa.pose.position.y
-                iiwa.goal_carte_pose.pose.position.z = pos_iiwa.pose.position.z
-                # iiwa.goal_carte_pose.pose.position.x = goal_pos[0]
-                # iiwa.goal_carte_pose.pose.position.y = goal_pos[1]
-                # iiwa.goal_carte_pose.pose.position.z = goal_pos[2]
-                # iiwa.goal_carte_pose.pose.orientation = goal_quat
-                # iiwa.goal_carte_pose.pose.orientation.x = goal_quat[0]
-                # iiwa.goal_carte_pose.pose.orientation.y = goal_quat[1]
-                # iiwa.goal_carte_pose.pose.orientation.z = goal_quat[2]
-                # iiwa.goal_carte_pose.pose.orientation.w = goal_quat[3]
+                iiwa.goal_carte_pose.pose.position.z = pos_iiwa.pose.position.z+0.05 # avoid collision
                 iiwa.goal_carte_pose.pose.orientation.x = iiwa.cartesian_pose.orientation.x
                 iiwa.goal_carte_pose.pose.orientation.y = iiwa.cartesian_pose.orientation.y
                 iiwa.goal_carte_pose.pose.orientation.z = iiwa.cartesian_pose.orientation.z

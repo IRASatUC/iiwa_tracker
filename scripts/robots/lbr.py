@@ -14,7 +14,7 @@ from iiwa_msgs.msg import JointQuantity, JointPosition, JointVelocity, Cartesian
 
 from robots import utils
 
-RATE = 30
+RATE = 10
 
 class iiwaRobot(object):
     def __init__(self):
@@ -26,7 +26,7 @@ class iiwaRobot(object):
         self.goal_joint_pos = JointPosition()
         self.goal_carte_pose = PoseStamped()
         # tf listener
-        self.tf_listener = tf.TransformListener()
+        # self.tf_listener = tf.TransformListener()
         # publisher
         self.joint_pos_publisher = rospy.Publisher('/iiwa/command/JointPosition', JointPosition, queue_size=1)
         self.carte_pose_publisher = rospy.Publisher('iiwa/command/CartesianPose', PoseStamped, queue_size=1)
